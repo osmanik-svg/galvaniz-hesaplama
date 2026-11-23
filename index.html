@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#123b55"><title>Galvaniz Hesaplama</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17212b;background:#f2f5f7}*{box-sizing:border-box}body{margin:0 auto;padding:16px 14px 30px;max-width:620px}.head{background:#123b55;color:white;padding:20px;border-radius:18px;margin-bottom:14px}.head h1{font-size:23px;margin:0 0 5px}.head p{margin:0;color:#d9e8ef;font-size:13px}.panel,.results{background:white;border:1px solid #dfe6eb;border-radius:16px;padding:16px;margin:12px 0}.panel h2,.results h2{font-size:17px;margin:0 0 13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field label{display:block;font-size:13px;font-weight:650;margin-bottom:5px}.field input,.field select{width:100%;font:inherit;font-size:17px;padding:12px;border:1px solid #c8d3db;border-radius:10px;background:#fff;color:#17212b}.full{grid-column:1/-1}.metric{padding:11px 0;border-bottom:1px solid #edf0f2}.metric:last-child{border:0}.label{font-size:13px;color:#667580}.value{font-size:24px;font-weight:750;margin-top:3px;overflow-wrap:anywhere}.primary .value{color:#087b58;font-size:28px}.small,.hint{font-size:12px;color:#667580;line-height:1.45;margin-top:5px}.status{font-size:12px;color:#087b58;margin-top:8px}.error{display:none;color:#b42318;font-size:13px;margin-top:10px}.actions{display:flex;gap:10px}.actions button{flex:1;padding:13px;border:0;border-radius:11px;background:#e4edf2;color:#123b55;font-size:15px;font-weight:650}.foot{font-size:11px;color:#687782;line-height:1.5;margin:12px 3px}@media(max-width:360px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style></head><body>
+<header class="head"><h1>Galvaniz Hesaplama</h1><p>1 ton sac için üretim adedi ve fire dahil birim maliyet</p><div class="status" id="status" style="color:#d7f5e7">Hesaplama aktif</div></header>
+<section class="panel"><h2>Malzeme bilgileri</h2><div class="grid">
+<div class="field"><label for="width">En (mm)</label><input id="width" type="text" inputmode="decimal" value="122"></div>
+<div class="field"><label for="thickness">Kalınlık (mm)</label><input id="thickness" type="text" inputmode="decimal" value="0,40"></div>
+<div class="field"><label for="length">Uzunluk (mm)</label><input id="length" type="text" inputmode="decimal" value="3000"></div>
+<div class="field"><label for="zinc">Kaplama</label><select id="zinc"><option value="0">Kaplama hariç</option><option value="60">Z60</option><option value="100" selected>Z100</option><option value="140">Z140</option><option value="275">Z275</option><option value="custom">Özel Z değeri</option></select></div>
+<div class="field full" id="customWrap" hidden><label for="customZ">Özel kaplama (g/m²)</label><input id="customZ" type="text" inputmode="decimal" value="100"></div></div><p class="hint">Z değeri iki yüzün toplam kaplama ağırlığıdır.</p></section>
+<section class="panel"><h2>Fiyat ve fire bilgileri</h2><div class="grid">
+<div class="field"><label for="price">Ton fiyatı (USD)</label><input id="price" type="text" inputmode="decimal" value="900"></div>
+<div class="field"><label for="rate">Dolar kuru (TL)</label><input id="rate" type="text" inputmode="decimal" value="50"></div>
+<div class="field full"><label for="scrap">Üretim firesi (%)</label><input id="scrap" type="text" inputmode="decimal" value="3"></div></div><p class="hint">Dolar kurunu ve ton fiyatını manuel gir.</p></section>
+<section class="results"><h2>Hesaplama sonuçları</h2>
+<div class="metric"><div class="label">Bir adet malzemenin ağırlığı</div><div class="value" id="pieceKg">—</div></div>
+<div class="metric"><div class="label">Fire öncesi teorik adet</div><div class="value" id="grossCount">—</div></div>
+<div class="metric"><div class="label">Fire miktarı</div><div class="value" id="scrapKg">—</div><div class="small" id="usableKg"></div></div>
+<div class="metric primary"><div class="label">Fire sonrası üretilebilir tam adet</div><div class="value" id="pieceCount">—</div><div class="small" id="exactCount"></div></div>
+<div class="metric"><div class="label">1 tonun TL maliyeti</div><div class="value" id="tonTl">—</div></div>
+<div class="metric"><div class="label">Fire hariç birim maliyet</div><div class="value" id="unitNoFire">—</div></div>
+<div class="metric primary"><div class="label">Fire dahil birim maliyet</div><div class="value" id="unitTl">—</div><div class="small" id="yieldInfo"></div></div>
+<div class="error" id="error">Lütfen geçerli, sıfırdan büyük değerler gir. Fire %0 ile %99,9 arasında olmalı.</div></section>
+<div class="actions"><button type="button" id="reset">İlk değerlere dön</button><button type="button" id="share">Sonucu paylaş</button></div>
+<p class="foot">Çelik yoğunluğu 7,86 g/cm³ kabul edilir. Kaplama ağırlığı iki yüz toplam Z değeriyle eklenir. Ton fiyatının galvanizli sacın ton fiyatı olduğu varsayılır. Fire, 1.000 kg malzemenin üretime girmeyen kısmıdır; hurda geliri düşülmez. Sonuçlar teoriktir.</p>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const num=id=>{let s=$(id).value.trim().replace(/\s/g,'').replace(',','.');return s===''?NaN:Number(s)};
+ const fmt=(n,d=2)=>new Intl.NumberFormat('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
+ function calc(){
+  const w=num('width'),t=num('thickness'),l=num('length'),p=num('price'),r=num('rate'),scrap=num('scrap');
+  const zs=$('zinc').value,z=zs==='custom'?num('customZ'):Number(zs);
+  $('customWrap').hidden=zs!=='custom';
+  const valid=[w,t,l,p,r,z,scrap].every(Number.isFinite)&&w>0&&t>0&&l>0&&p>0&&r>0&&z>=0&&scrap>=0&&scrap<100;
+  $('error').style.display=valid?'none':'block';
+  if(!valid){['pieceKg','grossCount','scrapKg','usableKg','pieceCount','exactCount','tonTl','unitNoFire','unitTl','yieldInfo'].forEach(id=>$(id).textContent='—');return;}
+  const steelKg=w*t*l*7.86/1000000;
+  const coatKg=(w/1000)*(l/1000)*z/1000;
+  const pieceKg=steelKg+coatKg;
+  const gross=1000/pieceKg, usable=1000*(1-scrap/100), exact=usable/pieceKg, whole=Math.floor(exact);
+  const tonTl=p*r, noFire=tonTl/1000*pieceKg, withFire=whole>0?tonTl/whole:NaN;
+  $('pieceKg').textContent=fmt(pieceKg,4)+' kg';$('grossCount').textContent=fmt(gross,2)+' adet';
+  $('scrapKg').textContent=fmt(1000-usable,2)+' kg';$('usableKg').textContent='Üretime kalan: '+fmt(usable,2)+' kg';
+  $('pieceCount').textContent=whole.toLocaleString('tr-TR')+' adet';$('exactCount').textContent='Fire sonrası teorik miktar: '+fmt(exact,2)+' adet';
+  $('tonTl').textContent=fmt(tonTl,2)+' ₺';$('unitNoFire').textContent=fmt(noFire,2)+' ₺ / adet';
+  $('unitTl').textContent=Number.isFinite(withFire)?fmt(withFire,2)+' ₺ / adet':'—';
+  $('yieldInfo').textContent='Kaplama: '+(z===0?'Yok':'Z'+z)+' · Kaplama ağırlığı: '+fmt(coatKg,4)+' kg/adet';
+ }
+ ['width','thickness','length','zinc','customZ','price','rate','scrap'].forEach(id=>{ $(id).addEventListener('input',calc);$(id).addEventListener('change',calc); });
+ $('reset').addEventListener('click',()=>{ $('width').value='122';$('thickness').value='0,40';$('length').value='3000';$('zinc').value='100';$('customZ').value='100';$('price').value='900';$('rate').value='50';$('scrap').value='3';calc(); });
+ $('share').addEventListener('click',async()=>{const txt='Galvaniz Hesaplama\nÜretilebilir adet: '+$('pieceCount').textContent+'\nFire dahil birim maliyet: '+$('unitTl').textContent;try{if(navigator.share)await navigator.share({title:'Galvaniz Hesaplama',text:txt});else{await navigator.clipboard.writeText(txt);alert('Sonuç kopyalandı.')}}catch(e){}});
+ calc();
+})();
+</script></body></html>
