@@ -22,9 +22,10 @@
 <div class="metric"><div class="label">1 tonun TL maliyeti</div><div class="value" id="tonTl">—</div></div>
 <div class="metric"><div class="label">Fire hariç birim maliyet</div><div class="value" id="unitNoFire">—</div></div>
 <div class="metric primary"><div class="label">Fire dahil birim maliyet</div><div class="value" id="unitTl">—</div><div class="small" id="yieldInfo"></div></div>
+<div class="metric primary"><div class="label">%15 kârlı satış fiyatı</div><div class="value" id="profit15">—</div><div class="small">%15 kâr, fire dahil birim maliyetin üzerine eklenir.</div></div>
 <div class="error" id="error">Lütfen geçerli, sıfırdan büyük değerler gir. Fire %0 ile %99,9 arasında olmalı.</div></section>
 <div class="actions"><button type="button" id="reset">İlk değerlere dön</button><button type="button" id="share">Sonucu paylaş</button></div>
-<p class="foot">Çelik yoğunluğu 7,86 g/cm³ kabul edilir. Kaplama ağırlığı iki yüz toplam Z değeriyle eklenir. Ton fiyatının galvanizli sacın ton fiyatı olduğu varsayılır. Fire, 1.000 kg malzemenin üretime girmeyen kısmıdır; hurda geliri düşülmez. Sonuçlar teoriktir.</p>
+<p class="foot">Çelik yoğunluğu 7,86 g/cm³ kabul edilir. Kaplama ağırlığı iki yüz toplam Z değeriyle eklenir. Ton fiyatının galvanizli sacın ton fiyatı olduğu varsayılır. Fire, 1.000 kg malzemenin üretime girmeyen kısmıdır; hurda geliri düşülmez. %15 kârlı satış fiyatı, fire dahil birim maliyet × 1,15 olarak hesaplanır. Sonuçlar teoriktir.</p>
 <script>
 (function(){
  const $=id=>document.getElementById(id);
@@ -36,22 +37,27 @@
   $('customWrap').hidden=zs!=='custom';
   const valid=[w,t,l,p,r,z,scrap].every(Number.isFinite)&&w>0&&t>0&&l>0&&p>0&&r>0&&z>=0&&scrap>=0&&scrap<100;
   $('error').style.display=valid?'none':'block';
-  if(!valid){['pieceKg','grossCount','scrapKg','usableKg','pieceCount','exactCount','tonTl','unitNoFire','unitTl','yieldInfo'].forEach(id=>$(id).textContent='—');return;}
+  if(!valid){['pieceKg','grossCount','scrapKg','usableKg','pieceCount','exactCount','tonTl','unitNoFire','unitTl','profit15','yieldInfo'].forEach(id=>$(id).textContent='—');return;}
   const steelKg=w*t*l*7.86/1000000;
   const coatKg=(w/1000)*(l/1000)*z/1000;
   const pieceKg=steelKg+coatKg;
   const gross=1000/pieceKg, usable=1000*(1-scrap/100), exact=usable/pieceKg, whole=Math.floor(exact);
   const tonTl=p*r, noFire=tonTl/1000*pieceKg, withFire=whole>0?tonTl/whole:NaN;
+  const profit15=Number.isFinite(withFire)?withFire*1.15:NaN;
   $('pieceKg').textContent=fmt(pieceKg,4)+' kg';$('grossCount').textContent=fmt(gross,2)+' adet';
   $('scrapKg').textContent=fmt(1000-usable,2)+' kg';$('usableKg').textContent='Üretime kalan: '+fmt(usable,2)+' kg';
   $('pieceCount').textContent=whole.toLocaleString('tr-TR')+' adet';$('exactCount').textContent='Fire sonrası teorik miktar: '+fmt(exact,2)+' adet';
   $('tonTl').textContent=fmt(tonTl,2)+' ₺';$('unitNoFire').textContent=fmt(noFire,2)+' ₺ / adet';
   $('unitTl').textContent=Number.isFinite(withFire)?fmt(withFire,2)+' ₺ / adet':'—';
+  $('profit15').textContent=Number.isFinite(profit15)?fmt(profit15,2)+' ₺ / adet':'—';
   $('yieldInfo').textContent='Kaplama: '+(z===0?'Yok':'Z'+z)+' · Kaplama ağırlığı: '+fmt(coatKg,4)+' kg/adet';
  }
  ['width','thickness','length','zinc','customZ','price','rate','scrap'].forEach(id=>{ $(id).addEventListener('input',calc);$(id).addEventListener('change',calc); });
  $('reset').addEventListener('click',()=>{ $('width').value='122';$('thickness').value='0,40';$('length').value='3000';$('zinc').value='100';$('customZ').value='100';$('price').value='900';$('rate').value='50';$('scrap').value='3';calc(); });
- $('share').addEventListener('click',async()=>{const txt='Galvaniz Hesaplama\nÜretilebilir adet: '+$('pieceCount').textContent+'\nFire dahil birim maliyet: '+$('unitTl').textContent;try{if(navigator.share)await navigator.share({title:'Galvaniz Hesaplama',text:txt});else{await navigator.clipboard.writeText(txt);alert('Sonuç kopyalandı.')}}catch(e){}});
+ $('share').addEventListener('click',async()=>{const txt='Galvaniz Hesaplama
+Üretilebilir adet: '+$('pieceCount').textContent+'
+Fire dahil birim maliyet: '+$('unitTl').textContent+'
+%15 kârlı satış fiyatı: '+$('profit15').textContent;try{if(navigator.share)await navigator.share({title:'Galvaniz Hesaplama',text:txt});else{await navigator.clipboard.writeText(txt);alert('Sonuç kopyalandı.')}}catch(e){}});
  calc();
 })();
 </script></body></html>
