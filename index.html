@@ -54,10 +54,7 @@
  }
  ['width','thickness','length','zinc','customZ','price','rate','scrap'].forEach(id=>{ $(id).addEventListener('input',calc);$(id).addEventListener('change',calc); });
  $('reset').addEventListener('click',()=>{ $('width').value='122';$('thickness').value='0,40';$('length').value='3000';$('zinc').value='100';$('customZ').value='100';$('price').value='900';$('rate').value='50';$('scrap').value='3';calc(); });
- $('share').addEventListener('click',async()=>{const txt='Galvaniz Hesaplama
-Üretilebilir adet: '+$('pieceCount').textContent+'
-Fire dahil birim maliyet: '+$('unitTl').textContent+'
-%15 kârlı satış fiyatı: '+$('profit15').textContent;try{if(navigator.share)await navigator.share({title:'Galvaniz Hesaplama',text:txt});else{await navigator.clipboard.writeText(txt);alert('Sonuç kopyalandı.')}}catch(e){}});
+ $('share').addEventListener('click',async()=>{const txt='Galvaniz Hesaplama\nÜretilebilir adet: '+$('pieceCount').textContent+'\nFire dahil birim maliyet: '+$('unitTl').textContent+'\n%15 kârlı satış fiyatı: '+$('profit15').textContent;try{if(navigator.share)await navigator.share({title:'Galvaniz Hesaplama',text:txt});else{await navigator.clipboard.writeText(txt);alert('Sonuç kopyalandı.')}}catch(e){}});
  calc();
 })();
 </script></body></html>
